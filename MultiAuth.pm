@@ -7,7 +7,9 @@ package Apache::MultiAuth;
 # Marcel M. Weber
 # Darren Chamberlain
 #
-# Version 0.01-2 / 13.02.2002 / Marcel M. Weber
+# Version 0.01 / 13.02.2002 / Marcel M. Weber
+# Version 0.04 / 16.02.2002 / Darren Chamberlain
+# Version 0.05 / 18.02.2002 / Marcel M. Weber
 # ----------------------------------------------------------------------
 
 use strict;
@@ -19,7 +21,7 @@ use Apache::ModuleConfig ();
 use File::Spec ();
 use DynaLoader ();
 
-$VERSION = 0.04;
+$VERSION = 0.05;
 $DUMP_AUTH_MODULES = 0 unless defined $DUMP_AUTH_MODULES;
 
 use base qw(DynaLoader);
@@ -117,14 +119,22 @@ Apache::MultiAuth - Choose from a number of authentication modules at runtime
 
 =head1 SYNOPSIS
 
+Put lines like this in your httpd.conf. In this example authorization is requested
+for accessing the directory /test. First the credentials (username, password) are 
+checked against the module Apache::AuthSybase and then against the module 
+Apache::AuthenSmb. If any of them succeeds, access to /test is granted. 
+
   # in httpd.conf
+  # Important : if not set apachectl configtest will complain about syntax errors
+ 
   PerlModule  Apache::MultiAuth
 
   <Location /test>
-    AuthName Test
+    AuthName Test 
     AuthType Basic
 
     # PerlSetVars for various Apache::Auth* modules
+    # These here are example values for Apache::AuthenSmb
     PerlSetVar myPDC SAMBA
     PerlSetVar myDOMAIN ARBEITSGRUPPE
 
@@ -140,7 +150,9 @@ Apache::MultiAuth - Choose from a number of authentication modules at runtime
 Apache::MultiAuth allows you to specify multiple authentication
 modules, to be tried in order.  If any module in the list returns OK,
 then the user is considered authenticated; if none return OK, then the
-user is reprompted for credentials.
+MultiAuth module returns AUTH_REQUIRED and the user is reprompted for 
+credentials. This, depending on the browser, results in a 401 authorization
+required message.
 
 This is useful for cases where, for example, you have several
 authentication schemes:  for example, NIS, SMB, and htpasswd, and some
@@ -154,7 +166,9 @@ Apache::MultiAuth allows you to name a number of authentication
 modules, using the AuthModule directive.  These modules are queried,
 in the order they are provided, until one of them returns OK.
 Apache::MultiAuth then condiders authentication to be successful, and
-processing continues.
+processing continues. If none of the provided authentication modules 
+returns OK, Apache::MultiAuth passes AUTH_REQUIRED to apache, which
+results in a 401 Authorization required error.
 
 =head1 AUTHORS
 
