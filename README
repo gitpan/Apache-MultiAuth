@@ -1,0 +1,45 @@
+NAME
+    Apache::MultiAuth - Choose from a number of authentication modules at
+    runtime
+
+SYNOPSIS
+      # in httpd.conf
+      PerlModule  Apache::MultiAuth
+
+      <Location /test>
+        AuthName Test
+        AuthType Basic
+
+        # PerlSetVars for various Apache::Auth* modules
+        PerlSetVar myPDC SAMBA
+        PerlSetVar myDOMAIN ARBEITSGRUPPE
+
+        # Define order and class of Auth modules to try
+        AuthModule Apache::AuthSybase Apache::AuthenSmb
+
+        PerlAuthenHandler Apache::MultiAuth
+        require valid-user
+      </Location>
+
+DESCRIPTION
+    Apache::MultiAuth allows you to specify multiple authentication modules,
+    to be tried in order. If any module in the list returns OK, then the
+    user is considered authenticated; if none return OK, then the user is
+    reprompted for credentials.
+
+    This is useful for cases where, for example, you have several
+    authentication schemes: for example, NIS, SMB, and htpasswd, and some of
+    your users are only registered in some of the auth databases. Using
+    Apache::MultiAuth, they can be queried in order until the right one is
+    found.
+
+CONFIGURATION DIRECTIVES
+    Apache::MultiAuth allows you to name a number of authentication modules,
+    using the AuthModule directive. These modules are queried, in the order
+    they are provided, until one of them returns OK. Apache::MultiAuth then
+    condiders authentication to be successful, and processing continues.
+
+AUTHORS
+        Stathy G. Touloumis
+        Marcel M. Weber
+        Darren Chamberlain
