@@ -10,6 +10,7 @@ package Apache::MultiAuth;
 # Version 0.01 / 13.02.2002 / Marcel M. Weber
 # Version 0.04 / 16.02.2002 / Darren Chamberlain
 # Version 0.05 / 18.02.2002 / Marcel M. Weber
+# Version 0.06 / 04.03.2002 / Darren Chamberlain
 # ----------------------------------------------------------------------
 
 use strict;
@@ -21,7 +22,7 @@ use Apache::ModuleConfig ();
 use File::Spec ();
 use DynaLoader ();
 
-$VERSION = 0.05;
+$VERSION = 0.06;
 $DUMP_AUTH_MODULES = 0 unless defined $DUMP_AUTH_MODULES;
 
 use base qw(DynaLoader);
@@ -64,6 +65,7 @@ sub handler {
         my $handler = $am->can('handler') or next;
         if ($handler->($r) == OK) {
             $r->warn("$am returned OK");
+            $r->notes("AuthenticatedBy", $am);
             return OK
         }
 
@@ -85,7 +87,6 @@ sub DumpAuthModules($$$) {
     $DUMP_AUTH_MODULES = $dump;
 }
 
-use Data::Dumper;
 sub DIR_MERGE {
     warn "\n\nCalled DIR_MERGE!";
     my ($parent, $current) = @_;
@@ -94,7 +95,6 @@ sub DIR_MERGE {
                         (@{$parent->{AuthModules}},
                          @{$current->{AuthModules}});
     my $new = { AuthModules => \@auth_modules };
-    warn Dumper($new);
     return bless $new, ref $parent;
 }
 
@@ -159,6 +159,20 @@ authentication schemes:  for example, NIS, SMB, and htpasswd, and some
 of your users are only registered in some of the auth databases.
 Using Apache::MultiAuth, they can be queried in order until the right
 one is found.
+
+In the event that one of these modules returns OK, a note named
+"AuthenticatedBy" will be set, which contains the name of the module
+that returned OK, like so:
+
+    $r->notes("AuthenticatedBy" => "Module::Name");
+
+This can be retrieved by any handler that runs after the authentication
+phase, and can be very useful in logging:
+
+    CustomLog "%h %l %u %t \"%r\" %>s %b %{AuthenticatedBy}n" common_auth
+
+The last field in the common_auth log format will be the name of the module 
+that handled the authentication.
 
 =head1 CONFIGURATION DIRECTIVES
 
